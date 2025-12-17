@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Habit Dziennik</title>
+
+<style>
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont;
+  background: #0f172a;
+  color: #e5e7eb;
+}
+header {
+  padding: 16px;
+  text-align: center;
+  font-size: 22px;
+  font-weight: bold;
+}
+.card {
+  background: #1e293b;
+  padding: 14px;
+  margin: 12px;
+  border-radius: 14px;
+}
+button {
+  background: #22c55e;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-weight: bold;
+}
+input {
+  width: 100%;
+  padding: 8px;
+  margin-top: 6px;
+  border-radius: 8px;
+  border: none;
+}
+.habit {
+  display: flex;
+  justify-content: space-between;
+  padding: 6px 0;
+}
+.stats {
+  display: flex;
+  justify-content: space-around;
+}
+</style>
+</head>
+
+<body>
+
+<header>📘 Habit Dziennik</header>
+
+<div class="card">
+  <label>⏰ Godzina wstania</label>
+  <input type="time" id="wake">
+</div>
+
+<div class="card">
+  <h3>📋 Nawyki</h3>
+  <div id="list"></div>
+  <input id="newHabit" placeholder="Dodaj nowy nawyk">
+  <button onclick="addHabit()">Dodaj</button>
+</div>
+
+<div class="card stats">
+  <div>✅ <span id="done">0</span></div>
+  <div>❌ <span id="notdone">0</span></div>
+</div>
+
+<script>
+const day = new Date().toDateString();
+let data = JSON.parse(localStorage.getItem("habit-dziennik") || "{}");
+
+if (!data[day]) data[day] = { wake: "", habits: [] };
+
+function save() {
+  localStorage.setItem("habit-dziennik", JSON.stringify(data));
+  render();
+}
+
+function addHabit() {
+  const name = newHabit.value;
+  if (!name) return;
+  data[day].habits.push({ name, done: false });
+  newHabit.value = "";
+  save();
+}
+
+function toggle(i) {
+  data[day].habits[i].done = !data[day].habits[i].done;
+  save();
+}
+
+function render() {
+  list.innerHTML = "";
+  let d = 0;
+  data[day].habits.forEach((h, i) => {
+    if (h.done) d++;
+    list.innerHTML += `
+      <div class="habit">
+        ${h.name}
+        <input type="checkbox" ${h.done?"checked":""} onclick="toggle(${i})">
+      </div>`;
+  });
+  done.textContent = d;
+  notdone.textContent = data[day].habits.length - d;
+}
+
+wake.onchange = e => {
+  data[day].wake = e.target.value;
+  save();
+};
+
+render();
+</script>
+
+</body>
+</html>
