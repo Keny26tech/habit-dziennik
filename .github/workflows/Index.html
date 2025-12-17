@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Habit Dziennik - Miesiąc</title>
+<style>
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont;
+  background: #0f172a;
+  color: #e5e7eb;
+}
+header {
+  padding: 16px;
+  text-align: center;
+  font-size: 24px;
+  font-weight: bold;
+}
+.container {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+  padding: 12px;
+}
+.card {
+  background: #1e293b;
+  padding: 12px;
+  border-radius: 12px;
+}
+.card h4 {
+  margin: 0 0 8px 0;
+}
+input[type="checkbox"] {
+  margin-right: 6px;
+}
+.stats {
+  margin: 12px;
+  padding: 12px;
+  background: #2563eb;
+  border-radius: 12px;
+}
+.stats h3 {
+  margin-top: 0;
+}
+button {
+  background: #22c55e;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-weight: bold;
+  margin-top: 6px;
+  cursor: pointer;
+}
+</style>
+</head>
+<body>
+
+<header>📘 Habit Dziennik - Miesiąc</header>
+
+<div class="container" id="calendar"></div>
+
+<div class="stats" id="weeklySummary">
+  <h3>📅 Tygodniowe podsumowanie</h3>
+  <div id="weeklyContent"></div>
+</div>
+
+<div class="stats" id="monthlySummary">
+  <h3>📊 Miesięczne podsumowanie</h3>
+  <div id="monthlyContent"></div>
+</div>
+
+<script>
+const habits = ["Picie alkoholu", "Siłownia", "Wyjście z domu", "Zarabianie", "Godzina wstawania"];
+const today = new Date();
+const year = today.getFullYear();
+const month = today.getMonth(); // 0-11
+const monthKey = `${year}-${month+1}`;
+let data = JSON.parse(localStorage.getItem("habit-dziennik") || "{}");
+if (!data[monthKey]) data[monthKey] = {};
+
+// Funkcja do tworzenia dni miesiąca
+function renderCalendar() {
+  const container = document.getElementById("calendar");
+  container.innerHTML = "";
+  const daysInMonth = new Date(year, month+1, 0).getDate();
+
+  for (let d=1; d<=daysInMonth; d++) {
+    if (!data[monthKey][d]) {
+      data[monthKey][d] = { habits: {} };
+      habits.forEach(h => {
+        data[monthKey][d].habits[h] = (h==="Godzina wstawania") ? "" : false;
+      });
+    }
+    const card = document.createElement("div");
+    card.className = "card";
+    const date = new Date(year, month, d);
+    const dayName = date.toLocaleDateString("pl-PL", { weekday: "short" });
+    card.innerHTML = `<h4>${d} ${dayName}</h4>`;
+    habits.forEach(h => {
+      if(h === "Godzina wstawania") {
+        card.innerHTML += `<label>${h}: <input type="time" value="${data[monthKey][d].habits[h]}" onchange="updateHabit(${d}, '${h}', this.value)"></label><br>`;
+      } else {
+        card.innerHTML += `<label><input type="checkbox" ${data[monthKey][d].habits[h]?"checked":""} onchange="updateHabit(${d}, '${h}', this.checked)">${h}</label><br>`;
+      }
+    });
+    container.appendChild(card);
+  }
+}
+
+// Funkcja aktualizowania danych
+function updateHabit(day, habit, value) {
+  data[monthKey][day].habits[habit] = value;
+  localStorage.setItem("habit-dziennik", JSON.stringify(data));
+  renderWeeklySummary();
+  renderMonthlySummary();
+}
+
+// Tygodniowe podsumowanie
+function renderWeeklySummary() {
+  const content = document.getElementById("weeklyContent");
+  content.innerHTML = "";
+  const daysInMonth = new Date(year, month+1, 0).getDate();
+  for(let w=0; w<Math.ceil(daysInMonth/7); w++) {
+    const weekHabits = {};
+    habits.forEach(h => weekHabits[h]=0);
+    for(let d=w*7+1; d<=Math.min((w+1)*7, daysInMonth); d++) {
+      habits.forEach(h => {
+        if(h !== "Godzina wstawania" && data[monthKey][d].habits[h]) weekHabits[h]++;
+      });
+    }
+    let weekDiv = document.createElement("div");
+    weekDiv.innerHTML = `<b>Tydzień ${w+1}</b><br>`;
+    habits.forEach(h => {
+      if(h !== "Godzina wstawania") {
+        weekDiv.innerHTML += `${h}: ${weekHabits[h]} dni<br>`;
+      }
+    });
+    content.appendChild(weekDiv);
+  }
+}
+
+// Miesięczne podsumowanie
+function renderMonthlySummary() {
+  const content = document.getElementById("monthlyContent");
+  content.innerHTML = "";
+  const daysInMonth = new Date(year, month+1, 0).getDate();
+  habits.forEach(h => {
+    if(h === "Godzina wstawania") return;
+    let count = 0;
+    for(let d=1; d<=daysInMonth; d++) {
+      if(data[monthKey][d].habits[h]) count++;
+    }
+    let percent = ((count/daysInMonth)*100).toFixed(1);
+    content.innerHTML += `${h}: ${count} dni (${percent}%)<br>`;
+  });
+}
+
+renderCalendar();
+renderWeeklySummary();
+renderMonthlySummary();
+</script>
+
+</body>
+</html>
